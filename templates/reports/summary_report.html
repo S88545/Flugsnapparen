@@ -1,0 +1,86 @@
+
+{% extends "base.html" %}
+{% block title %}Årsrapport{% endblock %}
+{% block content %}
+<!-- ... (årsväljare och nyckeltal är oförändrade) ... -->
+<!-- ... (resultaträkning är oförändrad) ... -->
+<div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+    <div class="card p-6">
+        <h3 class="text-lg font-semibold text-gray-800 mb-4">Sammanställning per kategori</h3>
+        <div class="overflow-x-auto">
+            <table class="w-full text-left">
+                <thead>
+                    <tr class="border-b-2 text-sm uppercase">
+                        <th class="py-3 px-4">Kategori</th>
+                        <th class="py-3 px-4 text-right">Prognos</th>
+                        <th class="py-3 px-4 text-right">Utfall</th>
+                        <th class="py-3 px-4 text-right">Differens</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for name, data in report_data.items()|sort(attribute='1.actual') %}
+                    <tr class="border-b hover:bg-gray-50">
+                        <td class="py-3 px-4 font-medium">{{ name }}</td>
+                        <td class="py-3 px-4 text-right">{{ format_currency(data.prognosis) }}</td>
+                        <td
+                            class="py-3 px-4 text-right font-semibold {% if data.actual < 0 %}krona-negative{% else %}krona-positive{% endif %}">
+                            {{ format_currency(data.actual) }}</td>
+                        <td
+                            class="py-3 px-4 text-right {% if (data.actual - data.prognosis) < 0 %}krona-negative{% else %}krona-positive{% endif %}">
+                            {{ format_currency(data.actual - data.prognosis) }}</td>
+                    </tr>
+                    {% else %}
+                    <tr>
+                        <td colspan="4" class="text-center py-6">Inga transaktioner hittades för detta år.</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+    <div class="card p-6">
+        <h3 class="text-lg font-semibold text-gray-800 mb-4">Kostnadsfördelning (Prognos vs Utfall)</h3>
+        <div class="relative h-96"><canvas id="reportChart"></canvas></div>
+    </div>
+</div>
+{% endblock %}
+{% block scripts %}
+<script>
+    const chartDataJSON = '{{ chart_data | tojson | safe }}';
+    const chartDataFromFlask = JSON.parse(chartDataJSON);
+    const reportData = {
+        labels: chartDataFromFlask.labels,
+        datasets: [
+            {
+                label: 'Prognos',
+                data: chartDataFromFlask.prognosis,
+                backgroundColor: '#a5b4fc', // indigo-300
+                borderColor: '#6366f1', // indigo-500
+                borderWidth: 1
+            },
+            {
+                label: 'Utfall',
+                data: chartDataFromFlask.actuals,
+                backgroundColor: '#3b82f6', // blue-500
+                borderColor: '#1d4ed8', // blue-700
+                borderWidth: 1
+            }
+        ]
+    };
+    const config = {
+        type: 'bar',
+        data: reportData,
+        options: {
+            indexAxis: 'y',
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: { position: 'top' },
+                tooltip: { callbacks: { label: (context) => `${context.dataset.label}: ${new Intl.NumberFormat('sv-SE', { style: 'currency', currency: 'SEK' }).format(context.parsed.x)}` } }
+            },
+            scales: { x: { ticks: { callback: (value) => value.toLocaleString('sv-SE') + ' kr' } } }
+        }
+    };
+    new Chart(document.getElementById('reportChart'), config);
+</script>
+{% endblock %}

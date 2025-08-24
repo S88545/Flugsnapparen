@@ -1,0 +1,71 @@
+
+{% extends "base.html" %}
+
+{% block title %}Hantera Kategorier{% endblock %}
+
+{% block content %}
+<div class="flex justify-between items-center mb-8">
+    <h2 class="text-3xl font-bold text-gray-800">Hantera Kategorier</h2>
+</div>
+
+<div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+    <!-- Lista med existerande kategorier -->
+    <div class="md:col-span-2">
+        <div class="card p-6">
+            <h3 class="text-lg font-semibold text-gray-800 mb-4">Existerande Kategorier</h3>
+            <div class="overflow-x-auto">
+                <table class="w-full text-left">
+                    <thead>
+                        <tr class="border-b-2 border-gray-200 text-sm text-gray-600 uppercase tracking-wider">
+                            <th class="py-3 px-4">Namn</th>
+                            <th class="py-3 px-4 text-center">Åtgärder</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for cat in categories %}
+                        <tr class="border-b border-gray-200 hover:bg-gray-50">
+                            <td class="py-3 px-4 font-medium text-gray-900">{{ cat.name }}</td>
+                            <td class="py-3 px-4 text-center">
+                                <a href="{{ url_for('categories.edit', id=cat.id) }}"
+                                    class="text-blue-600 hover:text-blue-800 font-medium mr-3">Ändra</a>
+                                <form action="{{ url_for('categories.delete', id=cat.id) }}" method="POST"
+                                    class="inline"
+                                    onsubmit="return confirm('Är du säker på att du vill ta bort kategorin? Den kan bara tas bort om den inte används.');">
+                                    <button type="submit" class="text-red-600 hover:text-red-800 font-medium">Ta
+                                        bort</button>
+                                </form>
+                            </td>
+                        </tr>
+                        {% else %}
+                        <tr>
+                            <td colspan="2" class="text-center py-6 text-gray-500">Inga kategorier hittades.</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Formulär för att lägga till ny kategori -->
+    <div>
+        <div class="card p-6">
+            <h3 class="text-lg font-semibold text-gray-800 mb-4">Lägg till Ny Kategori</h3>
+            <form action="{{ url_for('categories.add') }}" method="POST">
+                <div>
+                    <label for="name" class="block text-sm font-medium text-gray-700">Kategorinamn</label>
+                    <input type="text" name="name" id="name"
+                        class="mt-1 block w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                        required>
+                </div>
+                <div class="mt-4">
+                    <button type="submit"
+                        class="w-full inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+                        Spara Kategori
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

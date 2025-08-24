@@ -1,0 +1,129 @@
+
+{% extends "base.html" %}
+
+{% block title %}Dashboard{% endblock %}
+
+{% block content %}
+<div class="flex justify-between items-center mb-8">
+    <h2 class="text-3xl font-bold text-gray-800">Dashboard</h2>
+    <a href="{{ url_for('transactions.add') }}"
+        class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-lg flex items-center shadow-md hover:shadow-lg transition-shadow">
+        <svg class="h-5 w-5 mr-2" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+            <path fill-rule="evenodd"
+                d="M10 5a1 1 0 011 1v3h3a1 1 0 110 2h-3v3a1 1 0 11-2 0v-3H6a1 1 0 110-2h3V6a1 1 0 011-1z"
+                clip-rule="evenodd" />
+        </svg>
+        Ny Transaktion
+    </a>
+</div>
+
+<!-- Key Metrics -->
+<div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+    <div class="card p-6 col-span-1 md:col-span-3">
+        <h3 class="text-sm font-medium text-gray-500">Totalt Saldo</h3>
+        <p class="text-4xl font-bold text-gray-900 mt-2">{{ total_balance }}</p>
+    </div>
+    <div class="card p-6">
+        <h3 class="text-sm font-medium text-gray-500">Inkomster (i år)</h3>
+        <p class="text-3xl font-bold krona-positive mt-2">{{ income_this_year }}</p>
+    </div>
+    <div class="card p-6">
+        <h3 class="text-sm font-medium text-gray-500">Utgifter (i år)</h3>
+        <p class="text-3xl font-bold krona-negative mt-2">{{ expenses_this_year }}</p>
+    </div>
+    <div class="card p-6">
+        <h3 class="text-sm font-medium text-gray-500">Resultat (i år)</h3>
+        <p
+            class="text-3xl font-bold {% if result_this_year.startswith('-') %}krona-negative{% else %}krona-positive{% endif %} mt-2">
+            {{ result_this_year }}</p>
+    </div>
+</div>
+
+<!-- Main Content Area -->
+<div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+    <!-- Senaste Transaktioner -->
+    <div class="card lg:col-span-2 p-6">
+        <h3 class="text-lg font-semibold text-gray-800 mb-4">Senaste Transaktioner</h3>
+        <div class="overflow-x-auto">
+            <table class="w-full text-left">
+                <thead>
+                    <tr class="border-b border-gray-200 text-sm text-gray-500">
+                        <th class="py-2 px-4">Datum</th>
+                        <th class="py-2 px-4">Beskrivning</th>
+                        <th class="py-2 px-4">Typ</th>
+                        <th class="py-2 px-4 text-right">Belopp</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for tx in latest_transactions %}
+                    <tr class="border-b border-gray-100 hover:bg-gray-50">
+                        <td class="py-3 px-4 text-sm text-gray-600">{{ tx.transaction_date.strftime('%Y-%m-%d') }}</td>
+                        <td class="py-3 px-4 font-medium text-gray-800">{{ tx.description or 'Ingen beskrivning' }}</td>
+                        <td class="py-3 px-4"><span
+                                class="bg-gray-100 text-gray-800 text-xs font-medium mr-2 px-2.5 py-0.5 rounded-full">{{
+                                tx.type.name }}</span></td>
+                        <td
+                            class="py-3 px-4 text-right font-medium {% if tx.amount < 0 %}krona-negative{% else %}krona-positive{% endif %}">
+                            {{ format_currency(tx.amount) }}</td>
+                    </tr>
+                    {% else %}
+                    <tr>
+                        <td colspan="4" class="text-center py-4 text-gray-500">Inga transaktioner hittades.</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Kostnadsdiagram -->
+    <div class="card p-6">
+        <h3 class="text-lg font-semibold text-gray-800 mb-4">Kostnader per Kategori (i år)</h3>
+        <div class="relative h-64 md:h-80">
+            <canvas id="expenseChart"></canvas>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    const chartDataJSON = '{{ chart_data | tojson | safe }}';
+    const chartDataFromFlask = JSON.parse(chartDataJSON);
+    const expenseData = {
+        labels: chartDataFromFlask.labels,
+        datasets: [{
+            label: 'Kostnader',
+            data: chartDataFromFlask.data,
+            backgroundColor: ['#ef4444', '#f97316', '#eab308', '#84cc16', '#22c55e', '#14b8a6', '#06b6d4', '#3b82f6', '#6366f1', '#8b5cf6', '#a855f7', '#d946ef'],
+            borderColor: '#ffffff',
+            borderWidth: 2,
+            hoverOffset: 8
+        }]
+    };
+    const config = {
+        type: 'doughnut',
+        data: expenseData,
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: { display: false },
+                tooltip: {
+                    callbacks: {
+                        label: function (context) {
+                            let label = context.label || '';
+                            if (label) { label += ': '; }
+                            if (context.parsed !== null) {
+                                label += new Intl.NumberFormat('sv-SE', { style: 'currency', currency: 'SEK' }).format(context.parsed);
+                            }
+                            return label;
+                        }
+                    }
+                }
+            }
+        }
+    };
+    const expenseChart = new Chart(document.getElementById('expenseChart'), config);
+</script>
+{% endblock %}

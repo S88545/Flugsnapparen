@@ -1,0 +1,36 @@
+{% extends "base.html" %}
+{% block title %}{{ title }}{% endblock %}
+{% block content %}
+<h2 class="text-3xl font-bold text-gray-800 mb-8">{{ title }}</h2>
+<div class="card p-8 max-w-2xl mx-auto">
+    <form method="POST">
+        <div class="space-y-6">
+            <div>
+                <label for="year" class="block text-sm font-medium text-gray-700">År</label>
+                <input type="number" name="year" id="year" value="{{ settings.year if settings else '' }}"
+                       class="mt-1 block w-full px-3 py-2 bg-white border rounded-md {% if settings %}bg-gray-100{% endif %}" required {% if settings %}readonly{% endif %}>
+            </div>
+            <div>
+                <label for="total_yta_kvm" class="block text-sm font-medium">Total bostadsrättsyta (kvm)</label>
+                <input type="number" step="0.01" name="total_yta_kvm" id="total_yta_kvm" value="{{ settings.total_yta_kvm if settings else '' }}" class="mt-1 block w-full px-3 py-2 bg-white border rounded-md" required>
+            </div>
+            <div>
+                <label for="totala_lan" class="block text-sm font-medium">Föreningens totala lån (kr)</label>
+                <input type="number" step="0.01" name="totala_lan" id="totala_lan" value="{{ settings.totala_lan if settings else '' }}" class="mt-1 block w-full px-3 py-2 bg-white border rounded-md" required>
+            </div>
+            <div>
+                <label for="totala_arsavgifter" class="block text-sm font-medium">Totala årsavgifter (kr)</label>
+                <input type="number" step="0.01" name="totala_arsavgifter" id="totala_arsavgifter" value="{{ settings.totala_arsavgifter if settings else '' }}" class="mt-1 block w-full px-3 py-2 bg-white border rounded-md" required>
+            </div>
+            <div>
+                <label for="tillgodohavande_placering" class="block text-sm font-medium">Tillgodohavande Placeringskonto (kr)</label>
+                <input type="number" step="0.01" name="tillgodohavande_placering" id="tillgodohavande_placering" value="{{ settings.tillgodohavande_placering if settings else '' }}" class="mt-1 block w-full px-3 py-2 bg-white border rounded-md" required>
+            </div>
+        </div>
+        <div class="mt-8 pt-5 border-t flex justify-end space-x-3">
+            <a href="{{ url_for('yearly_settings.list') }}" class="bg-white py-2 px-4 border rounded-md">Avbryt</a>
+            <button type="submit" class="py-2 px-4 border rounded-md text-white bg-blue-600 hover:bg-blue-700">Spara</button>
+        </div>
+    </form>
+</div>
+{% endblock %}

@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="sv">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Bokföringsapp{% endblock %} - Flugsnapparen</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f8fafc;
+        }
+
+        .card {
+            background-color: white;
+            border-radius: 0.75rem;
+            box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+        }
+
+        .krona-positive {
+            color: #16a34a;
+        }
+
+        .krona-negative {
+            color: #dc2626;
+        }
+
+        .nav-link {
+            display: flex;
+            align-items: center;
+            padding: 0.5rem 1rem;
+            color: #4b5563;
+            border-radius: 0.5rem;
+        }
+
+        .nav-link:hover {
+            background-color: #f3f4f6;
+        }
+
+        .nav-link.active {
+            background-color: #e5e7eb;
+            color: #1f2937;
+            font-weight: 600;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="flex h-screen bg-gray-100">
+        <aside class="w-64 flex-shrink-0 bg-white border-r border-gray-200">
+            <div class="h-full flex flex-col">
+                <div class="h-16 flex items-center justify-center border-b border-gray-200">
+                    <h1 class="text-2xl font-bold text-gray-800">Flugsnapparen</h1>
+                </div>
+                <nav class="flex-1 px-4 py-6 space-y-1">
+                    <a href="{{ url_for('main.index') }}"
+                        class="nav-link {% if request.endpoint == 'main.index' %}active{% endif %}">
+                        <svg class="h-5 w-5 mr-3" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
+                            stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
+                        </svg>
+                        Dashboard
+                    </a>
+                    <a href="{{ url_for('transactions.list') }}"
+                        class="nav-link {% if request.endpoint.startswith('transactions.') %}active{% endif %}">
+                        <svg class="h-5 w-5 mr-3" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
+                            stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z" />
+                        </svg>
+                        Transaktioner
+                    </a>
+                    <a href="{{ url_for('reports.summary') }}"
+                        class="nav-link {% if request.endpoint.startswith('reports.') %}active{% endif %}">
+                        <svg class="h-5 w-5 mr-3" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
+                            stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                        </svg>
+                        Rapporter
+                    </a>
+                    <a href="{{ url_for('prognosis.index') }}"
+                        class="nav-link {% if request.endpoint.startswith('prognosis.') %}active{% endif %}">
+                        <svg class="h-5 w-5 mr-3" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
+                            stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"></path>
+                        </svg>
+                        Prognos
+                    </a>
+                    <a href="{{ url_for('categories.list') }}"
+                        class="nav-link {% if request.endpoint.startswith('categories.') %}active{% endif %}">
+                        <svg class="h-5 w-5 mr-3" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
+                            stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-5 5a2 2 0 01-2.828 0l-7-7A2 2 0 013 8V3a2 2 0 012-2h2z" />
+                        </svg>
+                        Kategorier
+                    </a>
+                    <div class="pt-4 mt-4 border-t border-gray-200">
+                        <a href="{{ url_for('yearly_settings.list') }}"
+                            class="nav-link {% if request.endpoint.startswith('yearly_settings.') %}active{% endif %}">
+                            <svg class="h-5 w-5 mr-3" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
+                                stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.096 2.572-1.065z">
+                                </path>
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                            </svg>
+                            Inställningar
+                        </a>
+                    </div>
+                </nav>
+            </div>
+        </aside>
+        <main class="flex-1 p-6 lg:p-8 overflow-y-auto">
+            {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+            <div class="mb-4">
+                {% for category, message in messages %}
+                <div class="px-4 py-3 rounded-lg relative {{ 'bg-green-100 border-green-400 text-green-700' if category == 'success' else 'bg-red-100 border-red-400 text-red-700' if category == 'danger' else 'bg-yellow-100 border-yellow-400 text-yellow-700' }}"
+                    role="alert">
+                    <span class="block sm:inline">{{ message }}</span>
+                </div>
+                {% endfor %}
+            </div>
+            {% endif %}
+            {% endwith %}
+            {% block content %}{% endblock %}
+        </main>
+    </div>
+    {% block scripts %}{% endblock %}
+</body>
+
+</html>

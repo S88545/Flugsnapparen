@@ -1,0 +1,48 @@
+{% extends "base.html" %}
+{% block title %}Årsinställningar{% endblock %}
+{% block content %}
+<div class="flex justify-between items-center mb-8">
+    <h2 class="text-3xl font-bold text-gray-800">Årsinställningar</h2>
+    <a href="{{ url_for('yearly_settings.add') }}"
+        class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-lg flex items-center shadow-md">
+        Lägg till nytt år
+    </a>
+</div>
+<div class="card p-6">
+    <table class="w-full text-left">
+        <thead>
+            <tr class="border-b-2 text-sm uppercase">
+                <th class="py-3 px-4">År</th>
+                <th class="py-3 px-4">Total yta (kvm)</th>
+                <th class="py-3 px-4">Totala lån</th>
+                <th class="py-3 px-4">Totala årsavgifter</th>
+                <th class="py-3 px-4">Tillgodohavande</th>
+                <th class="py-3 px-4 text-center">Åtgärder</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for s in all_settings %}
+            <tr class="border-b hover:bg-gray-50">
+                <td class="py-3 px-4 font-bold">{{ s.year }}</td>
+                <td class="py-3 px-4">{{ s.total_yta_kvm }}</td>
+                <td class="py-3 px-4">{{ format_currency(s.totala_lan) }}</td>
+                <td class="py-3 px-4">{{ format_currency(s.totala_arsavgifter) }}</td>
+                <td class="py-3 px-4">{{ format_currency(s.tillgodohavande_placering) }}</td>
+                <td class="py-3 px-4 text-center">
+                    <a href="{{ url_for('yearly_settings.edit', year=s.year) }}"
+                        class="text-blue-600 font-medium mr-3">Ändra</a>
+                    <form action="{{ url_for('yearly_settings.delete', year=s.year) }}" method="POST" class="inline"
+                        onsubmit="return confirm('Är du säker?');">
+                        <button type="submit" class="text-red-600 font-medium">Ta bort</button>
+                    </form>
+                </td>
+            </tr>
+            {% else %}
+            <tr>
+                <td colspan="6" class="text-center py-6 text-gray-500">Inga inställningar hittades.</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}

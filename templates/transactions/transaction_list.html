@@ -1,0 +1,125 @@
+
+{% extends "base.html" %}
+
+{% block title %}Transaktioner{% endblock %}
+
+{% block content %}
+<div class="flex justify-between items-center mb-8">
+    <h2 class="text-3xl font-bold text-gray-800">Alla Transaktioner</h2>
+    <a href="{{ url_for('transactions.add') }}"
+        class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-lg flex items-center shadow-md hover:shadow-lg transition-shadow">
+        <svg class="h-5 w-5 mr-2" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+            <path fill-rule="evenodd"
+                d="M10 5a1 1 0 011 1v3h3a1 1 0 110 2h-3v3a1 1 0 11-2 0v-3H6a1 1 0 110-2h3V6a1 1 0 011-1z"
+                clip-rule="evenodd" />
+        </svg>
+        Ny Transaktion
+    </a>
+</div>
+
+<div class="card p-6">
+    <div class="overflow-x-auto">
+        <table class="w-full text-left">
+            <thead>
+                <tr class="border-b-2 border-gray-200 text-sm text-gray-600 uppercase tracking-wider">
+                    <th class="py-3 px-4">
+                        <a href="{{ url_for('transactions.list', sort_by='date', order='desc' if sort_by == 'date' and order == 'asc' else 'asc') }}"
+                            class="flex items-center hover:text-gray-900">
+                            Datum
+                            {% if sort_by == 'date' %}
+                            <svg class="h-4 w-4 ml-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                {% if order == 'asc' %}
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M5 15l7-7 7 7" />
+                                {% else %}
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M19 9l-7 7-7-7" />
+                                {% endif %}
+                            </svg>
+                            {% endif %}
+                        </a>
+                    </th>
+                    <th class="py-3 px-4">
+                        <a href="{{ url_for('transactions.list', sort_by='description', order='desc' if sort_by == 'description' and order == 'asc' else 'asc') }}"
+                            class="flex items-center hover:text-gray-900">
+                            Beskrivning
+                            {% if sort_by == 'description' %}
+                            <svg class="h-4 w-4 ml-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                {% if order == 'asc' %}
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M5 15l7-7 7 7" />
+                                {% else %}
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M19 9l-7 7-7-7" />
+                                {% endif %}
+                            </svg>
+                            {% endif %}
+                        </a>
+                    </th>
+                    <th class="py-3 px-4">
+                        <a href="{{ url_for('transactions.list', sort_by='type', order='desc' if sort_by == 'type' and order == 'asc' else 'asc') }}"
+                            class="flex items-center hover:text-gray-900">
+                            Typ
+                            {% if sort_by == 'type' %}
+                            <svg class="h-4 w-4 ml-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                {% if order == 'asc' %}
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M5 15l7-7 7 7" />
+                                {% else %}
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M19 9l-7 7-7-7" />
+                                {% endif %}
+                            </svg>
+                            {% endif %}
+                        </a>
+                    </th>
+                    <th class="py-3 px-4 text-right">
+                        <a href="{{ url_for('transactions.list', sort_by='amount', order='desc' if sort_by == 'amount' and order == 'asc' else 'asc') }}"
+                            class="flex items-center justify-end hover:text-gray-900">
+                            Belopp
+                            {% if sort_by == 'amount' %}
+                            <svg class="h-4 w-4 ml-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                {% if order == 'asc' %}
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M5 15l7-7 7 7" />
+                                {% else %}
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M19 9l-7 7-7-7" />
+                                {% endif %}
+                            </svg>
+                            {% endif %}
+                        </a>
+                    </th>
+                    <th class="py-3 px-4 text-center">Åtgärder</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for tx in transactions %}
+                <tr class="border-b border-gray-200 hover:bg-gray-50">
+                    <td class="py-3 px-4 text-sm text-gray-800">{{ tx.transaction_date.strftime('%Y-%m-%d') }}</td>
+                    <td class="py-3 px-4 font-medium text-gray-900">{{ tx.description or 'Ingen beskrivning' }}</td>
+                    <td class="py-3 px-4"><span
+                            class="bg-gray-100 text-gray-800 text-xs font-medium mr-2 px-2.5 py-0.5 rounded-full">{{
+                            tx.type.name }}</span></td>
+                    <td
+                        class="py-3 px-4 text-right font-semibold {% if tx.amount < 0 %}krona-negative{% else %}krona-positive{% endif %}">
+                        {{ format_currency(tx.amount) }}</td>
+                    <td class="py-3 px-4 text-center">
+                        <a href="{{ url_for('transactions.edit', id=tx.id) }}"
+                            class="text-blue-600 hover:text-blue-800 font-medium mr-3">Ändra</a>
+                        <form action="{{ url_for('transactions.delete', id=tx.id) }}" method="POST" class="inline"
+                            onsubmit="return confirm('Är du säker på att du vill ta bort den här transaktionen?');">
+                            <button type="submit" class="text-red-600 hover:text-red-800 font-medium">Ta bort</button>
+                        </form>
+                    </td>
+                </tr>
+                {% else %}
+                <tr>
+                    <td colspan="5" class="text-center py-6 text-gray-500">Inga transaktioner hittades.</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

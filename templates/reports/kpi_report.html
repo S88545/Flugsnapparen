@@ -1,0 +1,74 @@
+{% extends "base.html" %}
+{% block title %}Nyckeltal{% endblock %}
+{% block content %}
+<div class="flex justify-between items-center mb-4">
+  <div>
+    <h2 class="text-3xl font-bold text-gray-800 mb-2">Rapporter</h2>
+    <div class="inline-flex rounded-md shadow-sm" role="group">
+      <a href="{{ url_for('reports.summary', year=selected_year) }}" class="px-4 py-2 text-sm font-medium border border-gray-200 rounded-l-lg {{ 'bg-white text-gray-900' if request.endpoint == 'reports.summary' else 'bg-gray-50 text-gray-700 hover:bg-white' }}">Årsrapport</a>
+      <a href="{{ url_for('reports.apartment_member_report', year=selected_year) }}" class="px-4 py-2 text-sm font-medium border border-gray-200 {{ 'bg-white text-gray-900' if request.endpoint == 'reports.apartment_member_report' else 'bg-gray-50 text-gray-700 hover:bg-white' }}">Lgh/Medlem</a>
+      <a href="{{ url_for('reports.kpi_report', year=selected_year) }}" class="px-4 py-2 text-sm font-medium border border-gray-200 rounded-r-lg {{ 'bg-white text-gray-900' if request.endpoint == 'reports.kpi_report' else 'bg-gray-50 text-gray-700 hover:bg-white' }}">Nyckeltal</a>
+    </div>
+  </div>
+  <div>
+    <label for="year" class="mr-2">År:</label>
+    <select id="year" class="border rounded p-2" onchange="location.href='?year='+this.value">
+      {% for y in available_years %}
+      <option value="{{ y }}" {% if y==selected_year %}selected{% endif %}>{{ y }}</option>
+      {% endfor %}
+    </select>
+  </div>
+</div>
+
+<div class="grid md:grid-cols-2 xl:grid-cols-3 gap-6">
+  <div class="card p-6">
+    <h3 class="text-sm text-gray-500">Skuld / kvm</h3>
+    <div class="text-2xl font-semibold">{{ metrics.skuld_per_kvm is not none and (format_currency(metrics.skuld_per_kvm) ~ ' / kvm') or '–' }}</div>
+    <p class="text-xs text-gray-500 mt-2">Totala lån delat med total yta.</p>
+  </div>
+
+  <div class="card p-6">
+    <h3 class="text-sm text-gray-500">Sparande / kvm</h3>
+    <div class="text-2xl font-semibold">{{ metrics.sparande_per_kvm is not none and (format_currency(metrics.sparande_per_kvm) ~ ' / kvm') or '–' }}</div>
+    <p class="text-xs text-gray-500 mt-2">Tillgodohavande delat med total yta.</p>
+  </div>
+
+  <div class="card p-6">
+    <h3 class="text-sm text-gray-500">Räntekänslighet (formell)</h3>
+    <div class="text-2xl font-semibold {{ metrics.rk_class }}">{{ format_percent(metrics.rantekanslighet_formell, 1) }}</div>
+    <p class="text-xs text-gray-500 mt-2">(Skulder × 1%) ÷ Årsavgifter. Klass: {{ metrics.rk_label }}.</p>
+  </div>
+
+  <div class="card p-6">
+    <h3 class="text-sm text-gray-500">Räntekänslighet (förenklad)</h3>
+    <div class="text-2xl font-semibold">{{ format_percent(metrics.rantekanslighet_forenklad, 1) }}</div>
+    <p class="text-xs text-gray-500 mt-2">Skulder ÷ Årsavgifter (tolkas som procentsats).</p>
+  </div>
+
+  <div class="card p-6">
+    <h3 class="text-sm text-gray-500">Energikostnad / kvm</h3>
+    <div class="text-2xl font-semibold">{{ metrics.energi_per_kvm is not none and (format_currency(metrics.energi_per_kvm) ~ ' / kvm') or '–' }}</div>
+    <p class="text-xs text-gray-500 mt-2">Summa transaktioner i Värme + Elektricitet (absolutvärde) ÷ yta.</p>
+  </div>
+
+  <div class="card p-6">
+    <h3 class="text-sm text-gray-500">Årsavgift / kvm</h3>
+    <div class="text-2xl font-semibold">{{ metrics.arsavgift_per_kvm is not none and (format_currency(metrics.arsavgift_per_kvm) ~ ' / kvm') or '–' }}</div>
+    <p class="text-xs text-gray-500 mt-2">Årsavgifter enligt Årsinställningar delat med yta.</p>
+  </div>
+
+  <div class="card p-6">
+    <h3 class="text-sm text-gray-500">Årsavgifternas andel av rörelseintäkter</h3>
+    <div class="text-2xl font-semibold">{{ format_percent(metrics.arsavgifter_andel_rorelseintakter, 1) }}</div>
+    <p class="text-xs text-gray-500 mt-2">Rörelseintäkter = Bank, ränta, m.m + Medlemsavgifter (positiva belopp).</p>
+  </div>
+</div>
+
+<div class="mt-8 text-xs text-gray-500">
+  <h4 class="font-semibold mb-2">Definitioner</h4>
+  <ul class="list-disc ml-5 space-y-1">
+    <li>Räntekänslighet visar hur mycket årsavgifterna behöver höjas vid 1 %-enhets räntehöjning.</li>
+    <li>HSB riktvärden: Låg ≤ 5 %, Normal 5–9 %, Hög 9–15 %, Mycket hög > 15 %.</li>
+  </ul>
+</div>
+{% endblock %}

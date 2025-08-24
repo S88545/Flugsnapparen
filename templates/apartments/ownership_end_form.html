@@ -1,0 +1,18 @@
+{% extends 'base.html' %}
+{% block title %}{{ title }}{% endblock %}
+{% block content %}
+<div class="flex items-center justify-between mb-4">
+  <h2 class="text-xl font-semibold">{{ title }} – lägenhet {{ apartment.apartment_number }}</h2>
+</div>
+<div class="card p-4 max-w-xl">
+  <form method="post">
+    <label class="block mb-2">Slutdatum</label>
+    <input class="border rounded w-full p-2" type="date" name="valid_to" required>
+    <div class="mt-4">
+      <button class="px-4 py-2 bg-blue-600 text-white rounded">Spara</button>
+      <a class="ml-2 text-gray-700" href="{{ url_for('apartments.ownerships', apartment_id=apartment.id) }}">Avbryt</a>
+    </div>
+  </form>
+  <p class="text-sm text-gray-600 mt-4">Du kan inte avsluta före startdatum.</p>
+</div>
+{% endblock %}

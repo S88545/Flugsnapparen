@@ -1,0 +1,31 @@
+{% extends 'base.html' %}
+{% block title %}Medlemmar{% endblock %}
+{% block content %}
+<div class="flex items-center justify-between mb-4">
+  <h2 class="text-xl font-semibold">Medlemmar</h2>
+  <a class="px-4 py-2 bg-blue-600 text-white rounded" href="{{ url_for('members.add') }}">Ny medlem</a>
+  </div>
+<div class="card p-4">
+  <table class="min-w-full">
+    <thead>
+      <tr class="text-left">
+        <th class="p-2">Namn</th>
+        <th class="p-2 w-40">Åtgärder</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for x in items %}
+      <tr class="border-t">
+        <td class="p-2">{{ x.name }}</td>
+        <td class="p-2">
+          <a class="text-blue-600" href="{{ url_for('members.edit', id=x.id) }}">Redigera</a>
+          <form class="inline" method="post" action="{{ url_for('members.delete', id=x.id) }}" onsubmit="return confirm('Ta bort?');">
+            <button class="text-red-600 ml-3" type="submit">Ta bort</button>
+          </form>
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}

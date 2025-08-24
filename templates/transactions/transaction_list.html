@@ -38,6 +38,17 @@
             </select>
         </div>
         <div>
+            <label class="block text-sm text-gray-700">Års-läge</label>
+            <select name="year_mode" class="mt-1 w-full border rounded p-2">
+                <option value="period" {% if year_mode=='period' %}selected{% endif %}>Bokföringsår</option>
+                <option value="date" {% if year_mode=='date' %}selected{% endif %}>Datumår</option>
+            </select>
+        </div>
+        <div>
+            <label class="block text-sm text-gray-700">Bokföringsår</label>
+            <input type="number" name="period_year" value="{{ period_year if period_year is not none else '' }}" class="mt-1 w-full border rounded p-2">
+        </div>
+        <div>
             <label class="block text-sm text-gray-700">Startdatum</label>
             <input type="date" name="start_date" value="{{ start_date }}" class="mt-1 w-full border rounded p-2" id="start_date">
         </div>
@@ -187,8 +198,9 @@
                 {% for tx in transactions %}
                 <tr class="border-b border-gray-200 hover:bg-gray-50">
                     <td class="py-3 px-4 text-sm text-gray-800">{{ tx.transaction_date.strftime('%Y-%m-%d') }}</td>
-                                        <td class="py-3 px-4 font-medium text-gray-900">
+                    <td class="py-3 px-4 font-medium text-gray-900">
                                                 {{ tx.description or 'Ingen beskrivning' }}
+                        <span class="ml-2 text-xs bg-gray-100 text-gray-800 px-2 py-0.5 rounded">År: {{ tx.period_year if tx.period_year is not none else tx.transaction_date.year }}</span>
                                                 {% if tx.member_ref %}
                                                     <span class="ml-2 text-xs bg-blue-100 text-blue-800 px-2 py-0.5 rounded">Medlem: {{ tx.member_ref.name }}</span>
                                                 {% elif tx.supplier_ref %}

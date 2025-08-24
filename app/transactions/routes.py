@@ -9,7 +9,7 @@ from . import transactions
 from ..models import Transaction, TransactionType, Member, Supplier
 from ..extensions import db
 from datetime import datetime
-from sqlalchemy import asc, desc, and_, or_, func
+from sqlalchemy import asc, desc, and_, or_, func, extract
 from datetime import date, timedelta
 
 @transactions.route('/')
@@ -30,6 +30,9 @@ def list():
     tag_kind = request.args.get('tag_kind', 'all')  # all|member|supplier|none|any
     amount_min = request.args.get('amount_min', type=float)
     amount_max = request.args.get('amount_max', type=float)
+    # Nytt: filter för bokföringsår (period) och läge för årsfilter
+    period_year = request.args.get('period_year', type=int)
+    year_mode = request.args.get('year_mode', 'period')  # period|date
 
     # Bygg upp grundfrågan mot databasen
     query = Transaction.query
@@ -50,11 +53,23 @@ def list():
             start_date = last_month_end.replace(day=1)
             end_date = last_month_end
         elif preset == 'this_year':
-            start_date = today.replace(month=1, day=1)
-            end_date = today.replace(month=12, day=31)
+            # Om vi filtrerar på periodår, använd år likamed idag.year, annars datumintervall
+            if year_mode == 'period':
+                # markerar att vi inte sätter start/end-datum
+                start_date = None
+                end_date = None
+                period_year = period_year or today.year
+            else:
+                start_date = today.replace(month=1, day=1)
+                end_date = today.replace(month=12, day=31)
         elif preset == 'last_year':
-            start_date = today.replace(year=today.year-1, month=1, day=1)
-            end_date = today.replace(year=today.year-1, month=12, day=31)
+            if year_mode == 'period':
+                start_date = None
+                end_date = None
+                period_year = period_year or (today.year - 1)
+            else:
+                start_date = today.replace(year=today.year-1, month=1, day=1)
+                end_date = today.replace(year=today.year-1, month=12, day=31)
         elif preset == 'last_30':
             start_date = today - timedelta(days=30)
             end_date = today
@@ -80,6 +95,11 @@ def list():
         query = query.filter(Transaction.transaction_date >= start_date)
     if end_date:
         query = query.filter(Transaction.transaction_date <= end_date)
+
+    # Filtrera på bokföringsår om angivet eller om årspreset med period-läge
+    if period_year is not None:
+        year_expr = func.coalesce(Transaction.period_year, extract('year', Transaction.transaction_date))
+        query = query.filter(year_expr == period_year)
 
     # Textsökning (beskrivning)
     if q:
@@ -152,10 +172,11 @@ def list():
         import io
         output = io.StringIO()
         writer = csv.writer(output, delimiter=';')
-        writer.writerow(['Datum', 'Beskrivning', 'Typ', 'Belopp', 'Medlem', 'Leverantör'])
+        writer.writerow(['Datum', 'Bokföringsår', 'Beskrivning', 'Typ', 'Belopp', 'Medlem', 'Leverantör'])
         for tx in all_transactions:
             writer.writerow([
                 tx.transaction_date.strftime('%Y-%m-%d'),
+                (tx.period_year if tx.period_year is not None else tx.transaction_date.year),
                 tx.description or '',
                 tx.type.name if tx.type else '',
                 f"{tx.amount}",
@@ -187,7 +208,9 @@ def list():
         amount_max=amount_max,
         transaction_types=transaction_types,
         members=members,
-        suppliers=suppliers,
+    suppliers=suppliers,
+    period_year=period_year,
+    year_mode=year_mode,
     )
 
 
@@ -201,6 +224,7 @@ def add():
         type_id = request.form.get('transaction_type_id')
         member_id = request.form.get('member_id', type=int)
         supplier_id = request.form.get('supplier_id', type=int)
+        period_year_val = request.form.get('period_year', type=int)
 
         if not date_str or not amount or not type_id:
             flash('Datum, belopp och typ är obligatoriska fält.', 'danger')
@@ -211,11 +235,15 @@ def add():
             flash('Välj antingen Medlem eller Leverantör, inte båda.', 'danger')
             return redirect(url_for('transactions.add'))
 
+        tx_date = datetime.strptime(date_str, '%Y-%m-%d').date()
+        # Defaulta bokföringsår till valt värde eller transaktionsdatumets år
+        py = period_year_val if period_year_val is not None else tx_date.year
         new_transaction = Transaction(
-            transaction_date=datetime.strptime(date_str, '%Y-%m-%d').date(),
+            transaction_date=tx_date,
             description=description,
             amount=amount,
-            transaction_type_id=type_id
+            transaction_type_id=type_id,
+            period_year=py
         )
         if member_id:
             new_transaction.member_id = member_id
@@ -231,11 +259,14 @@ def add():
     transaction_types = TransactionType.query.order_by(TransactionType.name).all()
     members = Member.query.order_by(Member.name).all()
     suppliers = Supplier.query.order_by(Supplier.name).all()
-    return render_template('transactions/transaction_form.html',
-                           title='Lägg till Transaktion',
-                           transaction_types=transaction_types,
-                           members=members,
-                           suppliers=suppliers)
+    return render_template(
+        'transactions/transaction_form.html',
+        title='Lägg till Transaktion',
+        transaction_types=transaction_types,
+        members=members,
+        suppliers=suppliers,
+        default_period_year=date.today().year,
+    )
 
 
 @transactions.route('/edit/<int:id>', methods=['GET', 'POST'])
@@ -250,6 +281,7 @@ def edit(id):
         transaction_to_edit.transaction_type_id = request.form.get('transaction_type_id')
         member_id = request.form.get('member_id', type=int)
         supplier_id = request.form.get('supplier_id', type=int)
+        period_year_val = request.form.get('period_year', type=int)
 
         if member_id and supplier_id:
             flash('Välj antingen Medlem eller Leverantör, inte båda.', 'danger')
@@ -257,6 +289,7 @@ def edit(id):
 
         transaction_to_edit.member_id = member_id if member_id else None
         transaction_to_edit.supplier_id = supplier_id if supplier_id else None
+        transaction_to_edit.period_year = period_year_val if period_year_val is not None else transaction_to_edit.transaction_date.year
         
         db.session.commit()
         flash('Transaktionen har uppdaterats.', 'success')

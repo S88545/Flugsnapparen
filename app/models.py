@@ -18,6 +18,8 @@ class Transaction(db.Model):
     description = db.Column(db.String(255), nullable=True)
     amount = db.Column(db.Numeric(10, 2), nullable=False)
     transaction_type_id = db.Column(db.Integer, db.ForeignKey('TransactionTypes.id'), nullable=False)
+    # Bokföringsår (period): möjliggör att knyta transaktionen till ett annat år än datumets
+    period_year = db.Column(db.Integer, nullable=True)
     # Fria textfält (legacy) – behålls för bakåtkompatibilitet
     supplier = db.Column(db.String(255), nullable=True)
     member = db.Column(db.String(255), nullable=True)
@@ -82,6 +84,7 @@ class Apartment(db.Model):
 
 class ApartmentOwnership(db.Model):
     __tablename__ = 'ApartmentOwnerships'
+    __table_args__ = {'implicit_returning': False}
     id = db.Column(db.Integer, primary_key=True)
     apartment_id = db.Column(db.Integer, db.ForeignKey('Apartments.id'), nullable=False, index=True)
     member_id = db.Column(db.Integer, db.ForeignKey('Members.id'), nullable=False, index=True)

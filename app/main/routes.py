@@ -9,7 +9,7 @@ from flask import render_template, jsonify
 from . import main
 from ..models import Transaction, TransactionType
 from ..extensions import db
-from sqlalchemy import func
+from sqlalchemy import func, extract
 import datetime
 import json
 
@@ -41,14 +41,15 @@ def index():
     # 1. Beräkna nyckeltal
     total_balance = db.session.query(func.sum(Transaction.amount)).scalar()
     
+    period_year_expr = func.coalesce(Transaction.period_year, extract('year', Transaction.transaction_date))
     income_this_year = db.session.query(func.sum(Transaction.amount)).filter(
         Transaction.amount > 0,
-        func.extract('year', Transaction.transaction_date) == current_year
+        period_year_expr == current_year
     ).scalar()
 
     expenses_this_year = db.session.query(func.sum(Transaction.amount)).filter(
         Transaction.amount < 0,
-        func.extract('year', Transaction.transaction_date) == current_year
+        period_year_expr == current_year
     ).scalar()
     
     # Hantera om någon av summorna är None (t.ex. inga utgifter än)
@@ -65,7 +66,7 @@ def index():
         func.sum(Transaction.amount)
     ).join(TransactionType).filter(
         Transaction.amount < 0,
-        func.extract('year', Transaction.transaction_date) == current_year
+        period_year_expr == current_year
     ).group_by(TransactionType.name).order_by(func.sum(Transaction.amount).asc()).all()
 
     # Formattera diagramdatan för Chart.js

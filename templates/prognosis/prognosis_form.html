@@ -43,13 +43,25 @@
                         {% for month in range(1, 13) %}
                         <td class="p-1">
                             <input type="number" step="0.01" name="prognosis-{{ cat.id }}-{{ month }}"
-                                value="{{ prognosis_data.get((cat.id, month), '') }}"
+                                value="{{ format_number2(prognosis_data.get((cat.id, month), '')) }}"
                                 class="w-24 p-1 border rounded-md text-right">
                         </td>
                         {% endfor %}
                     </tr>
                     {% endfor %}
                 </tbody>
+                <tfoot>
+                    <tr class="border-t-2">
+                        <!-- Matcha första kolumnens cell-stil (px-4, sticky, bg-white) -->
+                        <td class="py-2 px-4 font-medium sticky left-0 bg-white z-10 text-right">Summa</td>
+                        {% for month in range(1, 13) %}
+                        <!-- Matcha månads-celler: p-1 och innehåll med fast bredd (w-24) som inputs -->
+                        <td class="p-1">
+                            <div class="w-24 text-right">{{ format_number2(monthly_totals[month]) }}</div>
+                        </td>
+                        {% endfor %}
+                    </tr>
+                </tfoot>
             </table>
         </div>
     </div>

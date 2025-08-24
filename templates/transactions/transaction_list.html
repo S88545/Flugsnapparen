@@ -17,7 +17,97 @@
     </a>
 </div>
 
+<div class="card p-6 mb-6">
+    <form method="get" class="grid grid-cols-1 lg:grid-cols-4 gap-4" id="filterForm">
+        <div>
+            <label class="block text-sm text-gray-700">Tidsintervall</label>
+            <select name="preset" class="mt-1 w-full border rounded p-2" id="preset">
+                {% set presets = {
+                    'this_month':'Denna månad',
+                    'last_month':'Förra månaden',
+                    'this_year':'Detta år',
+                    'last_year':'Förra året',
+                    'last_30':'Senaste 30 dagar',
+                    'last_90':'Senaste 90 dagar',
+                    'all':'Alla',
+                    'custom':'Eget intervall'
+                } %}
+                {% for key, label in presets.items() %}
+                <option value="{{ key }}" {% if preset==key %}selected{% endif %}>{{ label }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div>
+            <label class="block text-sm text-gray-700">Startdatum</label>
+            <input type="date" name="start_date" value="{{ start_date }}" class="mt-1 w-full border rounded p-2" id="start_date">
+        </div>
+        <div>
+            <label class="block text-sm text-gray-700">Slutdatum</label>
+            <input type="date" name="end_date" value="{{ end_date }}" class="mt-1 w-full border rounded p-2" id="end_date">
+        </div>
+        <div>
+            <label class="block text-sm text-gray-700">Söktext</label>
+            <input type="text" name="q" value="{{ q }}" placeholder="Beskrivning..." class="mt-1 w-full border rounded p-2">
+        </div>
+
+        <div>
+            <label class="block text-sm text-gray-700">Typ</label>
+            <select name="type_id" class="mt-1 w-full border rounded p-2">
+                <option value="">Alla</option>
+                {% for t in transaction_types %}
+                  <option value="{{ t.id }}" {% if type_id==t.id %}selected{% endif %}>{{ t.name }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div>
+            <label class="block text-sm text-gray-700">Medlem</label>
+            <select name="member_id" class="mt-1 w-full border rounded p-2">
+                <option value="">Alla</option>
+                {% for m in members %}
+                  <option value="{{ m.id }}" {% if member_id==m.id %}selected{% endif %}>{{ m.name }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div>
+            <label class="block text-sm text-gray-700">Leverantör</label>
+            <select name="supplier_id" class="mt-1 w-full border rounded p-2">
+                <option value="">Alla</option>
+                {% for s in suppliers %}
+                  <option value="{{ s.id }}" {% if supplier_id==s.id %}selected{% endif %}>{{ s.name }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div>
+            <label class="block text-sm text-gray-700">Taggtyp</label>
+            <select name="tag_kind" class="mt-1 w-full border rounded p-2">
+                <option value="all" {% if tag_kind=='all' %}selected{% endif %}>Alla</option>
+                <option value="any" {% if tag_kind=='any' %}selected{% endif %}>Har någon tagg</option>
+                <option value="member" {% if tag_kind=='member' %}selected{% endif %}>Endast Medlem</option>
+                <option value="supplier" {% if tag_kind=='supplier' %}selected{% endif %}>Endast Leverantör</option>
+                <option value="none" {% if tag_kind=='none' %}selected{% endif %}>Utan tagg</option>
+            </select>
+        </div>
+        <div>
+            <label class="block text-sm text-gray-700">Belopp min</label>
+            <input type="number" step="0.01" name="amount_min" value="{{ amount_min if amount_min is not none else '' }}" class="mt-1 w-full border rounded p-2">
+        </div>
+        <div>
+            <label class="block text-sm text-gray-700">Belopp max</label>
+            <input type="number" step="0.01" name="amount_max" value="{{ amount_max if amount_max is not none else '' }}" class="mt-1 w-full border rounded p-2">
+        </div>
+        <div class="flex items-end gap-2">
+            <button class="px-4 py-2 bg-blue-600 text-white rounded">Filtrera</button>
+            <a class="px-4 py-2 bg-gray-200 rounded" href="{{ url_for('transactions.list') }}">Rensa</a>
+            <a class="px-4 py-2 bg-green-600 text-white rounded" href="{{ url_for('transactions.list', preset=preset, start_date=start_date, end_date=end_date, q=q, type_id=type_id, member_id=member_id, supplier_id=supplier_id, tag_kind=tag_kind, amount_min=amount_min, amount_max=amount_max, sort_by=sort_by, order=order, export=1) }}">Exportera CSV</a>
+        </div>
+    </form>
+</div>
+
 <div class="card p-6">
+    <div class="flex justify-end mb-4">
+        {% set balance_class = 'krona-positive' if total_balance >= 0 else 'krona-negative' %}
+        <div class="text-2xl font-bold {{ balance_class }}">Saldo: {{ format_currency(total_balance) }}</div>
+    </div>
     <div class="overflow-x-auto">
         <table class="w-full text-left">
             <thead>
@@ -97,7 +187,14 @@
                 {% for tx in transactions %}
                 <tr class="border-b border-gray-200 hover:bg-gray-50">
                     <td class="py-3 px-4 text-sm text-gray-800">{{ tx.transaction_date.strftime('%Y-%m-%d') }}</td>
-                    <td class="py-3 px-4 font-medium text-gray-900">{{ tx.description or 'Ingen beskrivning' }}</td>
+                                        <td class="py-3 px-4 font-medium text-gray-900">
+                                                {{ tx.description or 'Ingen beskrivning' }}
+                                                {% if tx.member_ref %}
+                                                    <span class="ml-2 text-xs bg-blue-100 text-blue-800 px-2 py-0.5 rounded">Medlem: {{ tx.member_ref.name }}</span>
+                                                {% elif tx.supplier_ref %}
+                                                    <span class="ml-2 text-xs bg-amber-100 text-amber-800 px-2 py-0.5 rounded">Leverantör: {{ tx.supplier_ref.name }}</span>
+                                                {% endif %}
+                                        </td>
                     <td class="py-3 px-4"><span
                             class="bg-gray-100 text-gray-800 text-xs font-medium mr-2 px-2.5 py-0.5 rounded-full">{{
                             tx.type.name }}</span></td>
@@ -122,4 +219,54 @@
         </table>
     </div>
 </div>
+{% endblock %}
+
+{% block scripts %}
+{{ super() }}
+<script>
+    // Synka datumfält automatiskt när preset ändras
+    (function(){
+        const preset = document.getElementById('preset');
+        const s = document.getElementById('start_date');
+        const e = document.getElementById('end_date');
+        function pad(n){ return (n<10?'0':'') + n }
+        function toDateStr(d){ return d.getFullYear() + '-' + pad(d.getMonth()+1) + '-' + pad(d.getDate()) }
+        function onPreset(){
+            const today = new Date();
+            let start=null, end=null;
+            if (preset.value === 'this_year'){
+                start = new Date(today.getFullYear(),0,1);
+                end = new Date(today.getFullYear(),11,31);
+            } else if (preset.value === 'last_year'){
+                start = new Date(today.getFullYear()-1,0,1);
+                end = new Date(today.getFullYear()-1,11,31);
+            } else if (preset.value === 'this_month'){
+                start = new Date(today.getFullYear(), today.getMonth(), 1);
+                end = new Date(today.getFullYear(), today.getMonth()+1, 0);
+            } else if (preset.value === 'last_month'){
+                start = new Date(today.getFullYear(), today.getMonth()-1, 1);
+                end = new Date(today.getFullYear(), today.getMonth(), 0);
+            } else if (preset.value === 'last_30'){
+                start = new Date(today.getFullYear(), today.getMonth(), today.getDate()-30);
+                end = today;
+            } else if (preset.value === 'last_90'){
+                start = new Date(today.getFullYear(), today.getMonth(), today.getDate()-90);
+                end = today;
+            } else if (preset.value === 'all'){
+                start = '';
+                end = '';
+            }
+            if (start && end){
+                s.value = toDateStr(start);
+                e.value = toDateStr(end);
+            } else if (preset.value !== 'custom'){
+                s.value = '';
+                e.value = '';
+            }
+        }
+        preset && preset.addEventListener('change', onPreset);
+        // Kör en gång vid laddning om det är default
+        onPreset();
+    })();
+</script>
 {% endblock %}

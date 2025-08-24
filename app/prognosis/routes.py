@@ -7,6 +7,7 @@ from ..models import Transaction, TransactionType, Prognosis
 from ..extensions import db
 from sqlalchemy import func, extract
 import datetime
+from decimal import Decimal, ROUND_HALF_UP
 
 @prognosis.route('/', methods=['GET'])
 def index():
@@ -19,7 +20,14 @@ def manage(year):
         for key, value in request.form.items():
             if key.startswith('prognosis-'):
                 _, type_id, month = key.split('-')
-                amount = value if value else 0
+                # Normalisera och kvantisera till 2 decimaler, undvik 0E-10
+                if value is None or value == "":
+                    amount = Decimal('0.00')
+                else:
+                    d = Decimal(str(value))
+                    if abs(d) < Decimal('0.0000001'):
+                        d = Decimal('0')
+                    amount = d.quantize(Decimal('0.01'), rounding=ROUND_HALF_UP)
                 
                 existing = Prognosis.query.filter_by(year=year, month=int(month), transaction_type_id=int(type_id)).first()
                 if existing:
@@ -34,6 +42,16 @@ def manage(year):
     categories = TransactionType.query.order_by(TransactionType.name).all()
     prognosis_data_query = Prognosis.query.filter_by(year=year).all()
     prognosis_data = {(p.transaction_type_id, p.month): p.prognosis_amount for p in prognosis_data_query}
+
+    # Månadstotaler (summa över alla kategorier per månad)
+    monthly_totals = {m: Decimal('0.00') for m in range(1, 13)}
+    for (type_id, month), amount in prognosis_data.items():
+        d = Decimal(str(amount or 0))
+        if abs(d) < Decimal('0.0000001'):
+            d = Decimal('0')
+        monthly_totals[month] = (monthly_totals[month] + d)
+    for m in monthly_totals:
+        monthly_totals[m] = monthly_totals[m].quantize(Decimal('0.01'), rounding=ROUND_HALF_UP)
     
     available_years_query = db.session.query(extract('year', Transaction.transaction_date)).distinct().order_by(extract('year', Transaction.transaction_date).desc())
     available_years = [y[0] for y in available_years_query.all()]
@@ -42,6 +60,7 @@ def manage(year):
     return render_template('prognosis/prognosis_form.html',
                            categories=categories,
                            prognosis_data=prognosis_data,
+                           monthly_totals=monthly_totals,
                            selected_year=year,
                            prev_year=prev_year)
 
@@ -67,7 +86,9 @@ def generate(year, from_year):
         ).group_by(extract('month', Transaction.transaction_date), Transaction.transaction_type_id).all()
 
         for actual in past_months_actuals:
-            db.session.add(Prognosis(year=year, month=actual.month, transaction_type_id=actual.transaction_type_id, prognosis_amount=actual.total))
+            total = Decimal(str(actual.total or 0))
+            total = (Decimal('0') if abs(total) < Decimal('0.0000001') else total).quantize(Decimal('0.01'), rounding=ROUND_HALF_UP)
+            db.session.add(Prognosis(year=year, month=actual.month, transaction_type_id=actual.transaction_type_id, prognosis_amount=total))
 
         # 2. Beräkna genomsnitt för innevarande år för framtida månader
         current_year_sums = db.session.query(
@@ -78,12 +99,16 @@ def generate(year, from_year):
             extract('month', Transaction.transaction_date) <= current_month
         ).group_by(Transaction.transaction_type_id).all()
 
-        monthly_averages = {item.transaction_type_id: item.total / current_month for item in current_year_sums}
+        monthly_averages = {}
+        for item in current_year_sums:
+            total = Decimal(str(item.total or 0))
+            avg = (total / Decimal(current_month)).quantize(Decimal('0.01'), rounding=ROUND_HALF_UP)
+            monthly_averages[item.transaction_type_id] = avg
 
         all_type_ids = [type.id for type in TransactionType.query.all()]
         for month in range(current_month + 1, 13):
             for type_id in all_type_ids:
-                avg_amount = monthly_averages.get(type_id, 0)
+                avg_amount = monthly_averages.get(type_id, Decimal('0.00'))
                 if avg_amount != 0:
                     db.session.add(Prognosis(year=year, month=month, transaction_type_id=type_id, prognosis_amount=avg_amount))
         
@@ -102,7 +127,9 @@ def generate(year, from_year):
             return redirect(url_for('prognosis.manage', year=year))
 
         for actual in previous_year_actuals:
-            db.session.add(Prognosis(year=year, month=actual.month, transaction_type_id=actual.transaction_type_id, prognosis_amount=actual.total))
+            total = Decimal(str(actual.total or 0))
+            total = (Decimal('0') if abs(total) < Decimal('0.0000001') else total).quantize(Decimal('0.01'), rounding=ROUND_HALF_UP)
+            db.session.add(Prognosis(year=year, month=actual.month, transaction_type_id=actual.transaction_type_id, prognosis_amount=total))
         
         flash(f'En linjär prognos för {year} har genererats baserat på utfallet från {from_year}.', 'success')
 

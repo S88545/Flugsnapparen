@@ -12,7 +12,9 @@ from decimal import Decimal
 @reports.route('/summary')
 def summary():
     # ... (kod för att hämta år och inställningar är oförändrad) ...
-    available_years_query = db.session.query(extract('year', Transaction.transaction_date)).distinct().order_by(extract('year', Transaction.transaction_date).desc())
+    # Använd bokföringsår som default (period), fallback till datumår
+    period_year_expr = func.coalesce(Transaction.period_year, extract('year', Transaction.transaction_date))
+    available_years_query = db.session.query(period_year_expr).distinct().order_by(period_year_expr.desc())
     available_years = [y[0] for y in available_years_query.all()]
     try:
         selected_year = int(request.args.get('year', available_years[0] if available_years else datetime.date.today().year))
@@ -24,11 +26,11 @@ def summary():
         year_settings = YearlySetting(year=selected_year, total_yta_kvm=1, totala_lan=0, totala_arsavgifter=1, tillgodohavande_placering=0)
 
     # Hämta finansiell data
-    total_income = db.session.query(func.sum(Transaction.amount)).filter(Transaction.amount > 0, extract('year', Transaction.transaction_date) == selected_year).scalar() or 0
-    total_expenses = db.session.query(func.sum(Transaction.amount)).filter(Transaction.amount < 0, extract('year', Transaction.transaction_date) == selected_year).scalar() or 0
+    total_income = db.session.query(func.sum(Transaction.amount)).filter(Transaction.amount > 0, period_year_expr == selected_year).scalar() or 0
+    total_expenses = db.session.query(func.sum(Transaction.amount)).filter(Transaction.amount < 0, period_year_expr == selected_year).scalar() or 0
     net_result = total_income + total_expenses
     energi_kategorier = ['El', 'Värme', 'Vatten o avlopp']
-    energikostnad = db.session.query(func.sum(Transaction.amount)).join(TransactionType).filter(TransactionType.name.in_(energi_kategorier), extract('year', Transaction.transaction_date) == selected_year).scalar() or 0
+    energikostnad = db.session.query(func.sum(Transaction.amount)).join(TransactionType).filter(TransactionType.name.in_(energi_kategorier), period_year_expr == selected_year).scalar() or 0
     
     # Beräkna nyckeltal
     nyckeltal = {
@@ -41,7 +43,7 @@ def summary():
     }
 
     # Hämta sammanställning per kategori (UTFALL)
-    summary_by_type = db.session.query(TransactionType.name, func.sum(Transaction.amount).label('total_actual')).join(TransactionType).filter(extract('year', Transaction.transaction_date) == selected_year).group_by(TransactionType.name).all()
+    summary_by_type = db.session.query(TransactionType.name, func.sum(Transaction.amount).label('total_actual')).join(TransactionType).filter(period_year_expr == selected_year).group_by(TransactionType.name).all()
     
     # Hämta sammanställning per kategori (PROGNOS)
     prognosis_by_type = db.session.query(TransactionType.name, func.sum(Prognosis.prognosis_amount).label('total_prognosis')).join(TransactionType).filter(Prognosis.year == selected_year).group_by(TransactionType.name).all()
@@ -75,7 +77,8 @@ def summary():
 @reports.route('/apartment-member')
 def apartment_member_report():
     # Årsval baserat på transaktioner, fallback = innevarande år
-    available_years_query = db.session.query(extract('year', Transaction.transaction_date)).distinct().order_by(extract('year', Transaction.transaction_date).desc())
+    period_year_expr = func.coalesce(Transaction.period_year, extract('year', Transaction.transaction_date))
+    available_years_query = db.session.query(period_year_expr).distinct().order_by(period_year_expr.desc())
     available_years = [y[0] for y in available_years_query.all()]
     try:
         selected_year = int(request.args.get('year', available_years[0] if available_years else datetime.date.today().year))
@@ -163,7 +166,8 @@ def apartment_member_report():
 @reports.route('/kpi')
 def kpi_report():
     # Årsval
-    available_years_query = db.session.query(extract('year', Transaction.transaction_date)).distinct().order_by(extract('year', Transaction.transaction_date).desc())
+    period_year_expr = func.coalesce(Transaction.period_year, extract('year', Transaction.transaction_date))
+    available_years_query = db.session.query(period_year_expr).distinct().order_by(period_year_expr.desc())
     available_years = [y[0] for y in available_years_query.all()]
     try:
         selected_year = int(request.args.get('year', available_years[0] if available_years else datetime.date.today().year))
@@ -184,7 +188,7 @@ def kpi_report():
     energy_names = ['Värme', 'Elektricitet']
     energy_sum = db.session.query(func.coalesce(func.sum(Transaction.amount), 0.0)).join(TransactionType).filter(
         TransactionType.name.in_(energy_names),
-        extract('year', Transaction.transaction_date) == selected_year,
+        period_year_expr == selected_year,
     ).scalar() or 0.0
     energy_cost = abs(float(energy_sum))
 
@@ -193,12 +197,12 @@ def kpi_report():
     total_revenue = db.session.query(func.coalesce(func.sum(Transaction.amount), 0.0)).join(TransactionType).filter(
         Transaction.amount > 0,
         or_(TransactionType.name.in_(revenue_names), Transaction.transaction_type_id == 6),
-        extract('year', Transaction.transaction_date) == selected_year,
+        period_year_expr == selected_year,
     ).scalar() or 0.0
     annual_fees_income = db.session.query(func.coalesce(func.sum(Transaction.amount), 0.0)).join(TransactionType).filter(
         Transaction.amount > 0,
         TransactionType.name == 'Medlemsavgifter',
-        extract('year', Transaction.transaction_date) == selected_year,
+        period_year_expr == selected_year,
     ).scalar() or 0.0
 
     # Nyckeltal

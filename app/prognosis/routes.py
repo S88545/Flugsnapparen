@@ -53,7 +53,8 @@ def manage(year):
     for m in monthly_totals:
         monthly_totals[m] = monthly_totals[m].quantize(Decimal('0.01'), rounding=ROUND_HALF_UP)
     
-    available_years_query = db.session.query(extract('year', Transaction.transaction_date)).distinct().order_by(extract('year', Transaction.transaction_date).desc())
+    period_year_expr = func.coalesce(Transaction.period_year, extract('year', Transaction.transaction_date))
+    available_years_query = db.session.query(period_year_expr).distinct().order_by(period_year_expr.desc())
     available_years = [y[0] for y in available_years_query.all()]
     prev_year = max(available_years) if available_years else year - 1
 
@@ -81,7 +82,7 @@ def generate(year, from_year):
             Transaction.transaction_type_id,
             func.sum(Transaction.amount).label('total')
         ).filter(
-            extract('year', Transaction.transaction_date) == from_year,
+            func.coalesce(Transaction.period_year, extract('year', Transaction.transaction_date)) == from_year,
             extract('month', Transaction.transaction_date) <= current_month
         ).group_by(extract('month', Transaction.transaction_date), Transaction.transaction_type_id).all()
 
@@ -95,7 +96,7 @@ def generate(year, from_year):
             Transaction.transaction_type_id,
             func.sum(Transaction.amount).label('total')
         ).filter(
-            extract('year', Transaction.transaction_date) == year,
+            func.coalesce(Transaction.period_year, extract('year', Transaction.transaction_date)) == year,
             extract('month', Transaction.transaction_date) <= current_month
         ).group_by(Transaction.transaction_type_id).all()
 
@@ -120,7 +121,11 @@ def generate(year, from_year):
             extract('month', Transaction.transaction_date).label('month'),
             Transaction.transaction_type_id,
             func.sum(Transaction.amount).label('total')
-        ).filter(extract('year', Transaction.transaction_date) == from_year).group_by(extract('month', Transaction.transaction_date), Transaction.transaction_type_id).all()
+        ).filter(
+            func.coalesce(Transaction.period_year, extract('year', Transaction.transaction_date)) == from_year
+        ).group_by(
+            extract('month', Transaction.transaction_date), Transaction.transaction_type_id
+        ).all()
 
         if not previous_year_actuals:
             flash(f'Ingen data hittades för {from_year} att basera prognosen på.', 'warning')

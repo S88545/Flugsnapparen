@@ -2,8 +2,24 @@
 {% extends "base.html" %}
 {% block title %}Årsrapport{% endblock %}
 {% block content %}
-<!-- ... (årsväljare och nyckeltal är oförändrade) ... -->
-<!-- ... (resultaträkning är oförändrad) ... -->
+<div class="flex justify-between items-center mb-4">
+    <div>
+        <h2 class="text-3xl font-bold text-gray-800 mb-2">Rapporter</h2>
+            <div class="inline-flex rounded-md shadow-sm" role="group">
+                <a href="{{ url_for('reports.summary', year=selected_year) }}" class="px-4 py-2 text-sm font-medium border border-gray-200 rounded-l-lg {{ 'bg-white text-gray-900' if request.endpoint == 'reports.summary' else 'bg-gray-50 text-gray-700 hover:bg-white' }}">Årsrapport</a>
+                <a href="{{ url_for('reports.apartment_member_report', year=selected_year) }}" class="px-4 py-2 text-sm font-medium border border-gray-200 {{ 'bg-white text-gray-900' if request.endpoint == 'reports.apartment_member_report' else 'bg-gray-50 text-gray-700 hover:bg-white' }}">Lgh/Medlem</a>
+                <a href="{{ url_for('reports.kpi_report', year=selected_year) }}" class="px-4 py-2 text-sm font-medium border border-gray-200 rounded-r-lg {{ 'bg-white text-gray-900' if request.endpoint == 'reports.kpi_report' else 'bg-gray-50 text-gray-700 hover:bg-white' }}">Nyckeltal</a>
+            </div>
+    </div>
+    <div>
+        <label for="year" class="mr-2">År:</label>
+        <select id="year" class="border rounded p-2" onchange="location.href='?year='+this.value">
+            {% for y in available_years %}
+            <option value="{{ y }}" {% if y==selected_year %}selected{% endif %}>{{ y }}</option>
+            {% endfor %}
+        </select>
+    </div>
+</div>
 <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
     <div class="card p-6">
         <h3 class="text-lg font-semibold text-gray-800 mb-4">Sammanställning per kategori</h3>

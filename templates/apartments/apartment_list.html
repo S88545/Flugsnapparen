@@ -1,0 +1,43 @@
+{% extends 'base.html' %}
+{% block title %}Lägenheter{% endblock %}
+{% block content %}
+<div class="flex items-center justify-between mb-4">
+  <h2 class="text-xl font-semibold">Lägenheter</h2>
+  <a class="px-4 py-2 bg-blue-600 text-white rounded" href="{{ url_for('apartments.add') }}">Ny lägenhet</a>
+  </div>
+<div class="card p-4">
+  <table class="min-w-full">
+    <thead>
+      <tr class="text-left">
+        <th class="p-2">Nr</th>
+        <th class="p-2">Yta (kvm)</th>
+        <th class="p-2">Andel</th>
+        <th class="p-2">Kvartalsavgift</th>
+        <th class="p-2">Aktuell ägare</th>
+        <th class="p-2 w-72">Åtgärder</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for a in items %}
+      <tr class="border-t">
+        <td class="p-2">{{ a.apartment_number }}</td>
+        <td class="p-2">{{ a.sqm_area }}</td>
+        <td class="p-2">{{ a.share }}</td>
+        <td class="p-2">{{ format_currency(a.quarterly_charge) }}</td>
+        <td class="p-2">{{ a.current_ownership.member_ref.name if a.current_ownership else '-' }}</td>
+        <td class="p-2">
+          <a class="text-blue-600" href="{{ url_for('apartments.edit', id=a.id) }}">Redigera</a>
+          <a class="text-indigo-600 ml-3" href="{{ url_for('apartments.ownerships', apartment_id=a.id) }}">Ägande</a>
+          {% if a.current_ownership %}
+          <a class="text-amber-700 ml-3" href="{{ url_for('apartments.ownership_end', apartment_id=a.id) }}">Avsluta</a>
+          {% endif %}
+          <form class="inline" method="post" action="{{ url_for('apartments.delete', id=a.id) }}" onsubmit="return confirm('Ta bort?');">
+            <button class="text-red-600 ml-3" type="submit">Ta bort</button>
+          </form>
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}

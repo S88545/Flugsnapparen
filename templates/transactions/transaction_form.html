@@ -56,6 +56,31 @@
                     {% endfor %}
                 </select>
             </div>
+
+            <!-- Märkning: Medlem eller Leverantör -->
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                    <label for="member_id" class="block text-sm font-medium text-gray-700">Medlem</label>
+                    <select name="member_id" id="member_id"
+                        class="mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500">
+                        <option value="">Ingen</option>
+                        {% for m in members %}
+                        <option value="{{ m.id }}" {% if transaction and transaction.member_id==m.id %}selected{% endif %}>{{ m.name }}</option>
+                        {% endfor %}
+                    </select>
+                    <p class="mt-1 text-xs text-gray-500">Välj antingen Medlem eller Leverantör, inte båda.</p>
+                </div>
+                <div>
+                    <label for="supplier_id" class="block text-sm font-medium text-gray-700">Leverantör</label>
+                    <select name="supplier_id" id="supplier_id"
+                        class="mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500">
+                        <option value="">Ingen</option>
+                        {% for s in suppliers %}
+                        <option value="{{ s.id }}" {% if transaction and transaction.supplier_id==s.id %}selected{% endif %}>{{ s.name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+            </div>
         </div>
 
         <!-- Knappar -->

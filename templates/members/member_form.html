@@ -1,0 +1,17 @@
+{% extends 'base.html' %}
+{% block title %}{{ title }}{% endblock %}
+{% block content %}
+<div class="flex items-center justify-between mb-4">
+  <h2 class="text-xl font-semibold">{{ title }}</h2>
+</div>
+<div class="card p-4 max-w-xl">
+  <form method="post">
+    <label class="block mb-2">Namn</label>
+    <input class="border rounded w-full p-2" type="text" name="name" value="{{ item.name if item else '' }}" required>
+    <div class="mt-4">
+      <button class="px-4 py-2 bg-blue-600 text-white rounded">Spara</button>
+      <a class="ml-2 text-gray-700" href="{{ url_for('members.list') }}">Avbryt</a>
+    </div>
+  </form>
+</div>
+{% endblock %}

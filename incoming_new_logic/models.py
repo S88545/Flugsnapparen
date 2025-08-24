@@ -2,7 +2,7 @@
 # FIL: app/models.py (UPPDATERAD)
 # =================================================================
 from .extensions import db
-from datetime import datetime
+from datetime import datetime, date
 
 class TransactionType(db.Model):
     __tablename__ = 'TransactionTypes'
@@ -18,10 +18,10 @@ class Transaction(db.Model):
     description = db.Column(db.String(255), nullable=True)
     amount = db.Column(db.Numeric(10, 2), nullable=False)
     transaction_type_id = db.Column(db.Integer, db.ForeignKey('TransactionTypes.id'), nullable=False)
-    # Fria textfält (legacy) – behålls för bakåtkompatibilitet
+    # Legacy fria textfält (behålls för bakåtkompatibilitet)
     supplier = db.Column(db.String(255), nullable=True)
     member = db.Column(db.String(255), nullable=True)
-    # Nya relationer till registertabeller (valfria)
+    # Nya relationer till registertabeller (om kolumnerna finns i DB)
     supplier_id = db.Column(db.Integer, db.ForeignKey('Suppliers.id'), nullable=True)
     member_id = db.Column(db.Integer, db.ForeignKey('Members.id'), nullable=True)
     supplier_ref = db.relationship('Supplier', foreign_keys=[supplier_id], lazy='joined')
@@ -44,16 +44,18 @@ class Prognosis(db.Model):
     transaction_type_id = db.Column(db.Integer, db.ForeignKey('TransactionTypes.id'), nullable=False)
     prognosis_amount = db.Column(db.Numeric(18, 2), nullable=False)
 
-# Register-tabeller
+# Register-tabeller för unika namn
 class Supplier(db.Model):
     __tablename__ = 'Suppliers'
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(255), unique=True, nullable=False)
+    # backref i Transaction via supplier_ref
 
 class Member(db.Model):
     __tablename__ = 'Members'
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(255), unique=True, nullable=False)
+    # backref i Transaction via member_ref
 
 class Apartment(db.Model):
     __tablename__ = 'Apartments'
@@ -73,12 +75,10 @@ class Apartment(db.Model):
 
     @property
     def current_ownership(self):
-        return (
-            self.ownerships
-            .filter_by(valid_to=None)
-            .order_by(ApartmentOwnership.valid_from.desc())
-            .first()
-        )
+        return (self.ownerships
+                .filter_by(valid_to=None)
+                .order_by(ApartmentOwnership.valid_from.desc())
+                .first())
 
 class ApartmentOwnership(db.Model):
     __tablename__ = 'ApartmentOwnerships'

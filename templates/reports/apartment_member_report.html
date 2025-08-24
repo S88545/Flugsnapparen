@@ -1,0 +1,64 @@
+{% extends "base.html" %}
+{% block title %}Lgh/Medlem – Inbetalningar och Avgifter{% endblock %}
+{% block content %}
+<div class="flex justify-between items-center mb-4">
+  <div>
+    <h2 class="text-3xl font-bold text-gray-800 mb-2">Rapporter</h2>
+    <div class="inline-flex rounded-md shadow-sm" role="group">
+      <a href="{{ url_for('reports.summary', year=selected_year) }}" class="px-4 py-2 text-sm font-medium border border-gray-200 rounded-l-lg {{ 'bg-white text-gray-900' if request.endpoint == 'reports.summary' else 'bg-gray-50 text-gray-700 hover:bg-white' }}">Årsrapport</a>
+      <a href="{{ url_for('reports.apartment_member_report', year=selected_year) }}" class="px-4 py-2 text-sm font-medium border border-gray-200 {{ 'bg-white text-gray-900' if request.endpoint == 'reports.apartment_member_report' else 'bg-gray-50 text-gray-700 hover:bg-white' }}">Lgh/Medlem</a>
+      <a href="{{ url_for('reports.kpi_report', year=selected_year) }}" class="px-4 py-2 text-sm font-medium border border-gray-200 rounded-r-lg {{ 'bg-white text-gray-900' if request.endpoint == 'reports.kpi_report' else 'bg-gray-50 text-gray-700 hover:bg-white' }}">Nyckeltal</a>
+    </div>
+  </div>
+  <div>
+    <label for="year" class="mr-2">År:</label>
+    <select id="year" class="border rounded p-2" onchange="location.href='?year='+this.value">
+      {% set years = available_years if available_years and available_years|length > 0 else [selected_year] %}
+      {% for y in years %}
+      <option value="{{ y }}" {% if y==selected_year %}selected{% endif %}>{{ y }}</option>
+      {% endfor %}
+    </select>
+  </div>
+</div>
+
+<div class="card p-2">
+  <div class="overflow-x-auto">
+    <table class="w-full text-left text-sm">
+      <thead class="bg-gray-50">
+        <tr class="border-b-2">
+          <th class="py-3 px-4 font-semibold">Lägenhet</th>
+          <th class="py-3 px-4 font-semibold">Medlem</th>
+          <th class="py-3 px-4 font-semibold text-right">Årsavgift (kvartal x4)</th>
+          <th class="py-3 px-4 font-semibold text-right">Inbetalt hittills</th>
+          <th class="py-3 px-4 font-semibold text-right">Förväntat</th>
+          <th class="py-3 px-4 font-semibold text-right">Saldo mot Årsavgift</th>
+          <th class="py-3 px-4 font-semibold text-right">Saldo mot Förväntat</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for r in rows %}
+        <tr class="border-b hover:bg-gray-50">
+          <td class="py-2 px-4">{{ r.apartment }}</td>
+          <td class="py-2 px-4">{{ r.member }}</td>
+          <td class="py-2 px-4 text-right">{{ format_currency(r.annual_fee) }}</td>
+          <td class="py-2 px-4 text-right">{{ format_currency(r.paid) }}</td>
+          <td class="py-2 px-4 text-right">{{ format_currency(r.expected) }}</td>
+          <td class="py-2 px-4 text-right {% if r.delta_annual < 0 %}text-red-600{% elif r.delta_annual > 0 %}text-green-700{% endif %}">{{ format_currency(r.delta_annual) }}</td>
+          <td class="py-2 px-4 text-right {% if r.delta_expected < 0 %}text-red-600{% elif r.delta_expected > 0 %}text-green-700{% endif %}">{{ format_currency(r.delta_expected) }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+      <tfoot>
+        <tr class="border-t-2 bg-gray-50 font-semibold">
+          <td class="py-2 px-4" colspan="2">Totalt</td>
+          <td class="py-2 px-4 text-right">{{ format_currency(totals.annual_fee) }}</td>
+          <td class="py-2 px-4 text-right">{{ format_currency(totals.paid) }}</td>
+          <td class="py-2 px-4 text-right">{{ format_currency(totals.expected) }}</td>
+          <td class="py-2 px-4 text-right">{{ format_currency(totals.delta_annual) }}</td>
+          <td class="py-2 px-4 text-right">{{ format_currency(totals.delta_expected) }}</td>
+        </tr>
+      </tfoot>
+    </table>
+  </div>
+</div>
+{% endblock %}

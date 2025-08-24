@@ -41,6 +41,15 @@
                 <p class="mt-2 text-xs text-gray-500">Använd minus (-) för utgifter, t.ex. -150.50.</p>
             </div>
 
+                <!-- Bokföringsår (period) -->
+                <div>
+                    <label for="period_year" class="block text-sm font-medium text-gray-700">Bokföringsår</label>
+                    <input type="number" name="period_year" id="period_year" min="2000" max="2100"
+                        value="{{ (transaction.period_year if transaction else default_period_year) or '' }}"
+                        class="mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"/>
+                    <p class="mt-1 text-xs text-gray-500">Standard är transaktionens år om inget anges.</p>
+                </div>
+
             <!-- Transaktionstyp -->
             <div>
                 <label for="transaction_type_id" class="block text-sm font-medium text-gray-700">Typ</label>

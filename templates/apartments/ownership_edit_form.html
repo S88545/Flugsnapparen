@@ -1,0 +1,33 @@
+{% extends 'base.html' %}
+{% block title %}{{ title }}{% endblock %}
+{% block content %}
+<div class="flex items-center justify-between mb-4">
+  <h2 class="text-xl font-semibold">{{ title }} – Lägenhet {{ apartment.apartment_number }}</h2>
+</div>
+<div class="card p-4 max-w-xl">
+  <form method="post">
+    <label class="block mb-2">Medlem</label>
+    <select class="border rounded w-full p-2" name="member_id" required>
+      {% for m in members %}
+        <option value="{{ m.id }}" {% if m.id == row.member_id %}selected{% endif %}>{{ m.name }}</option>
+      {% endfor %}
+    </select>
+
+    <div class="grid grid-cols-2 gap-4 mt-4">
+      <div>
+        <label class="block mb-2">Giltig från</label>
+        <input class="border rounded w-full p-2" type="date" name="valid_from" value="{{ row.valid_from }}" required>
+      </div>
+      <div>
+        <label class="block mb-2">Giltig till</label>
+        <input class="border rounded w-full p-2" type="date" name="valid_to" value="{{ row.valid_to if row.valid_to else '' }}">
+      </div>
+    </div>
+
+    <div class="mt-4">
+      <button class="px-4 py-2 bg-blue-600 text-white rounded">Spara</button>
+      <a class="ml-2 text-gray-700" href="{{ url_for('apartments.ownerships', apartment_id=apartment.id) }}">Avbryt</a>
+    </div>
+  </form>
+</div>
+{% endblock %}

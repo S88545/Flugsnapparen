@@ -202,3 +202,51 @@ def ownership_delete(id):
     db.session.commit()
     flash('Ägarpost borttagen.', 'success')
     return redirect(url_for('apartments.ownerships', apartment_id=apartment_id))
+
+
+@apartments.route('/ownerships/edit/<int:id>', methods=['GET', 'POST'])
+def ownership_edit(id):
+    """Redigera befintlig ägarpost (medlemsbyte och/eller datum)."""
+    row = ApartmentOwnership.query.get_or_404(id)
+    a = row.apartment
+    if request.method == 'POST':
+        from sqlalchemy import or_  # Imported here for clarity
+        member_id = request.form.get('member_id', type=int)
+        valid_from = request.form.get('valid_from')
+        valid_to = request.form.get('valid_to')
+        if not member_id or not valid_from:
+            flash('Medlem och giltig från-datum krävs.', 'danger')
+            return redirect(url_for('apartments.ownership_edit', id=id))
+
+        new_from = datetime.strptime(valid_from, '%Y-%m-%d').date()
+        new_to = None
+        if valid_to:
+            new_to = datetime.strptime(valid_to, '%Y-%m-%d').date()
+            if new_to < new_from:
+                flash('Slutdatum kan inte vara före startdatum.', 'danger')
+                return redirect(url_for('apartments.ownership_edit', id=id))
+
+        # Överlappsvalidering mot andra poster för samma lägenhet
+        overlap = (
+            ApartmentOwnership.query
+            .filter(
+                ApartmentOwnership.apartment_id == row.apartment_id,
+                ApartmentOwnership.id != row.id,
+                ApartmentOwnership.valid_from <= (new_to or date(9999, 12, 31)),
+                or_(ApartmentOwnership.valid_to.is_(None), ApartmentOwnership.valid_to >= new_from),
+            )
+            .first()
+        )
+        if overlap:
+            flash('Datum överlappar annan ägarpost. Justera datum först.', 'danger')
+            return redirect(url_for('apartments.ownership_edit', id=id))
+
+        row.member_id = member_id
+        row.valid_from = new_from
+        row.valid_to = new_to
+        db.session.commit()
+        flash('Ägarpost uppdaterad.', 'success')
+        return redirect(url_for('apartments.ownerships', apartment_id=row.apartment_id))
+
+    members = Member.query.order_by(Member.name).all()
+    return render_template('apartments/ownership_edit_form.html', apartment=a, row=row, members=members, title='Redigera ägande')

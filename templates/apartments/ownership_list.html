@@ -22,6 +22,7 @@
         <td class="p-2">{{ r.valid_from }}</td>
         <td class="p-2">{{ r.valid_to or '-' }}</td>
         <td class="p-2">
+          <a class="text-blue-600" href="{{ url_for('apartments.ownership_edit', id=r.id) }}">Redigera</a>
           <form class="inline" method="post" action="{{ url_for('apartments.ownership_delete', id=r.id) }}" onsubmit="return confirm('Ta bort?');">
             <button class="text-red-600 ml-3" type="submit">Ta bort</button>
           </form>

@@ -11,7 +11,7 @@
       <tr class="text-left">
         <th class="p-2">Nr</th>
         <th class="p-2">Yta (kvm)</th>
-        <th class="p-2">Andel</th>
+  <th class="p-2">Andel</th>
         <th class="p-2">Kvartalsavgift</th>
         <th class="p-2">Aktuell ägare</th>
         <th class="p-2 w-72">Åtgärder</th>
@@ -22,7 +22,7 @@
       <tr class="border-t">
         <td class="p-2">{{ a.apartment_number }}</td>
         <td class="p-2">{{ a.sqm_area }}</td>
-        <td class="p-2">{{ a.share }}</td>
+  <td class="p-2">{{ (a.share * 100) | round(2) }}%</td>
         <td class="p-2">{{ format_currency(a.quarterly_charge) }}</td>
         <td class="p-2">{{ a.current_ownership.member_ref.name if a.current_ownership else '-' }}</td>
         <td class="p-2">

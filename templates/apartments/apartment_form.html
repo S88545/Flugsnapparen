@@ -18,7 +18,7 @@
         <option value="{{ y }}">{{ y }}</option>
       {% endfor %}
     </select>
-    <p class="text-sm text-gray-600 mt-2">Andel beräknas som YearlySettings.total_yta_kvm / Yta. Kvartalsavgift beräknas som (YearlySettings.totala_arsavgifter / Andel) / 4.</p>
+  <p class="text-sm text-gray-600 mt-2">Andel = Yta / YearlySettings.total_yta_kvm. Kvartalsavgift ≈ totala_arsavgifter × andel / 4.</p>
 
     <div class="mt-4">
       <button class="px-4 py-2 bg-blue-600 text-white rounded">Spara</button>

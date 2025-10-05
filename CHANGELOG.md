@@ -4,6 +4,11 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+### Added
+- DB migration to ensure Transactions.id auto-generates when not IDENTITY: db/migrations/2025-08-26_add_default_sequence_for_transactions_id.sql
+	- Creates dbo.Transactions_id_seq and DEFAULT constraint if missing.
+	- Fixes "Cannot insert the value NULL into column 'id'" when inserting transactions.
+
 ## [0.7.0] - 2025-08-24
 ### Added
 - Accounting period year (period_year) for Transactions, allowing a transaction date (e.g., 2024-12-30) to belong to accounting year 2025.
